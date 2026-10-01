@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MET Forecast - manual entry</title>
+<style>
+:root{--bg:#0b1220;--panel:#131c30;--p2:#1a2540;--acc:#4fa3ff;--txt:#e8edf5;--dim:#93a1bd;--bd:#23304a;--good:#3ecf8e;--warn:#ff8a3d;--bad:#ff5d6c}
+*{box-sizing:border-box}
+body{margin:0;padding:20px;font-family:-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--txt)}
+.wrap{max-width:1000px;margin:0 auto}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+h1{font-size:1.5rem;margin:0}h1 small{color:var(--dim);font-size:.9rem;font-weight:400}
+h2{font-size:1rem;margin:0 0 12px}
+.panel{background:var(--panel);border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:16px}
+.row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end}
+.f{display:flex;flex-direction:column;gap:5px}
+label,.lbl{font-size:.75rem;color:var(--dim)}
+input,select,textarea{background:var(--p2);border:1px solid var(--bd);color:var(--txt);padding:8px 10px;border-radius:7px;font-size:.9rem;width:130px}
+textarea{width:100%;height:90px;font-family:monospace}
+button{background:var(--acc);color:#0b1220;border:0;padding:9px 18px;border-radius:7px;font-weight:600;cursor:pointer}
+button.sec{background:var(--p2);color:var(--txt);border:1px solid var(--bd);font-weight:400}
+button:disabled{opacity:.5;cursor:wait}
+.pill{font-size:.75rem;padding:4px 10px;border-radius:99px;background:var(--p2);color:var(--dim)}
+.pill.ok{color:var(--good)}.pill.err{color:var(--bad)}
+table{border-collapse:collapse;width:100%;font-size:.85rem}
+th,td{padding:4px 6px;text-align:right;border-bottom:1px solid var(--bd)}th:first-child,td:first-child{text-align:left}
+th{color:var(--dim);font-weight:500;font-size:.75rem;vertical-align:bottom}
+td input{width:100%;padding:5px 7px}
+.scroll{max-height:480px;overflow:auto}
+.note{font-size:.8rem;color:var(--dim);margin:8px 0 0}
+.box{border-left:3px solid var(--warn);background:var(--p2);padding:8px 12px;margin:8px 0;font-size:.82rem;border-radius:0 6px 6px 0}
+.box.err{border-color:var(--bad)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:14px}
+.card{background:var(--p2);border-radius:8px;padding:10px 12px}.card b{font-size:1.2rem;display:block;margin:2px 0}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.tabs button{padding:6px 12px;background:var(--p2);color:var(--txt);font-weight:400;border:1px solid var(--bd)}
+.tabs button.on{background:var(--acc);color:#0b1220;font-weight:600}
+.b{font-size:.68rem;padding:1px 6px;border-radius:99px;margin-left:4px;white-space:nowrap}
+.g{background:#1d4d3a;color:var(--good)}.w{background:#5a3a1a;color:var(--warn)}.r{background:#5a1f27;color:var(--bad)}
+.was{display:block;color:var(--dim);font-size:.7rem}.was i{color:var(--warn)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><h1>MET Forecast <small>manual entry</small></h1><span id="status" class="pill">connecting...</span></header>
+
+<div class="panel">
+  <h2>1. Location, time and units</h2>
+  <div class="row">
+    <div class="f"><label>Latitude (N)</label><input id="lat" type="number" step="0.01" value="30.5"></div>
+    <div class="f"><label>Longitude (E)</label><input id="lon" type="number" step="0.01" value="69.5"></div>
+    <div class="f"><label>Observation time, UTC (optional)</label><input id="ot" type="datetime-local" style="width:190px"></div>
+    <div class="f"><label>Temperature</label><select id="tu"><option value="C">&deg;C</option><option value="K">K</option></select></div>
+    <div class="f"><label>Wind unit</label><select id="wu"><option value="ms">m/s</option><option value="kt">knots</option><option value="kmh">km/h</option></select></div>
+    <div class="f"><label>Wind entered as</label><select id="wm" style="width:170px"><option value="sd">speed + direction</option><option value="uv">u + v components</option></select></div>
+  </div>
+  <p class="note" id="dom"></p>
+  <p class="note">Lat/lon picks the grid cell whose terrain baseline is used for the surface variables. Wind direction = where the wind blows <b>from</b> (0&deg; = north, 270&deg; = west).</p>
+</div>
+
+<div class="panel">
+  <h2>2. Surface observations <small style="color:var(--dim)">(all four required)</small></h2>
+  <div class="row">
+    <div class="f"><label id="l_st">Temperature</label><input id="s_t" type="number" step="any"><span class="note" id="r_st" style="margin:2px 0 0"></span></div>
+    <div class="f"><label id="l_sa">Wind speed</label><input id="s_wa" type="number" step="any"><span class="note" id="r_sa" style="margin:2px 0 0"></span></div>
+    <div class="f"><label id="l_sb">Wind direction</label><input id="s_wb" type="number" step="any"><span class="note" id="r_sb" style="margin:2px 0 0"></span></div>
+    <div class="f"><label>Station pressure (hPa)</label><input id="s_p" type="number" step="any"><span class="note" id="r_sp" style="margin:2px 0 0"></span></div>
+  </div>
+  <p class="note">Ranges shown under each field are the realistic range (2 std either side of typical) for the lat/lon above &mdash; they update when you change lat/lon. Values far outside them will be rejected rather than silently mis-forecast.</p>
+</div>
+
+<div class="panel">
+  <h2>3. Upper-air profile (sounding) <small style="color:var(--dim)">- leave a level blank if you have no data for it</small></h2>
+  <div class="row" style="margin-bottom:10px">
+    <button class="sec" id="btnTyp">Fill with typical values</button>
+    <button class="sec" id="btnClr">Clear all</button>
+    <button class="sec" id="btnPaste">Paste CSV...</button>
+    <span class="note" id="hint" style="margin:0"></span>
+  </div>
+  <div id="pasteBox" style="display:none;margin-bottom:10px">
+    <textarea id="csv" placeholder="pressure, temperature, wind1, wind2, height   (one level per line, blank = missing; use the units/wind mode selected above)&#10;850, 12.3, 8, 250, 1480&#10;700, 4.1, 12, 260, 3090"></textarea>
+    <button class="sec" id="btnApply" style="margin-top:6px">Apply</button> <span class="note" id="pasteMsg"></span>
+  </div>
+  <div class="scroll"><table><thead><tr><th>Level (hPa)</th><th id="th_t"></th><th id="th_a"></th><th id="th_b"></th><th>Height (m)</th></tr></thead><tbody id="lv"></tbody></table></div>
+  <p class="note">You can enter just <b>one</b> level if that's all you have. Blank levels are estimated from your nearest entered level(s), smoothly fading back to the training average the further away they are (in log-pressure) &mdash; every estimated value is flagged in the results, and it's a rougher guess the fewer levels you enter.</p>
+</div>
+
+<div class="row" style="margin-bottom:16px"><button id="go">Predict</button><span id="busy" class="note" style="margin:0"></span></div>
+<div id="err"></div>
+
+<div class="panel">
+  <h2>Check against live weather <small style="color:var(--dim)">(optional, uses the lat/lon above)</small></h2>
+  <div class="row" style="margin-bottom:8px"><button class="sec" id="btnLive">Check against live Open-Meteo forecast</button><span id="liveBusy" class="note" style="margin:0"></span></div>
+  <div id="liveErr"></div>
+  <div id="liveOut" style="display:none">
+    <div class="box"><b>What this actually checks.</b> Open-Meteo has no free ground-truth upper-air data for past dates -- so this fetches Open-Meteo's CURRENT conditions as input, runs our model, and compares our forecast against Open-Meteo's OWN forecast (ECMWF/GFS) for the same future times. It's a model-vs-model sanity check, not accuracy against observed reality. Only levels both sources share are compared (others are skipped, not interpolated).</div>
+    <div id="liveWarnings"></div>
+    <div class="cards"><div class="card"><span class="lbl">Overall accuracy vs Open-Meteo</span><b id="liveOverall">-</b><span class="was">avg across surface + <span id="liveNLevels"></span> shared levels, all lead times</span></div></div>
+    <p class="note" style="margin-top:0"><b>Live input fed to the model</b> (from Open-Meteo's current conditions, at <span id="liveObsTime"></span> UTC) -- check this against the forecast output below if a value looks physically wrong:</p>
+    <div class="scroll" style="max-height:200px"><table><thead><tr><th>Level (hPa)</th><th>Temp (C)</th><th>Wind (m/s)</th><th>Height (m)</th></tr></thead><tbody id="liveInputBody"></tbody></table></div>
+    <div class="tabs" id="liveTabs"></div>
+    <p class="note"><b>% of value</b> = how close to Open-Meteo's number, as a plain percentage. Shown as n/a for temperature -- there's no meaningful non-arbitrary zero for temperature (unlike wind speed, where 0 = no wind), so a ratio-based % would be misleading there (use the other column instead). <b>vs. typical error</b> = how this compares to the model's OWN known error from real evaluation (stricter -- 100% only if this miss is much smaller than that).</p>
+    <div class="scroll"><table><thead><tr><th>Variable</th><th>Our model</th><th>Open-Meteo</th><th>Abs. error</th><th>% of value</th><th>vs. typical error</th></tr></thead><tbody id="liveBody"></tbody></table></div>
+    <p class="note" id="liveMissing"></p>
+    <div class="box" style="border-color:var(--acc)">
+      <b>Levels actually compared (Open-Meteo doesn't support all 30 model levels):</b><br>
+      Compared (<span id="liveCmpCount"></span>): <span id="liveCmpList"></span><br>
+      NOT compared -- Open-Meteo has no data at these, so they're excluded from every table and from the overall % above (<span id="liveUncmpCount"></span>): <span id="liveUncmpList"></span>
+    </div>
+  </div>
+</div>
+
+<div class="panel" id="out" style="display:none">
+  <h2>Forecast <small id="ttl" style="color:var(--dim)"></small></h2>
+  <div class="tabs" id="tabs"></div>
+  <div id="warn"></div>
+  <div class="cards" id="sfc"></div>
+  <div class="scroll"><table><thead><tr><th>Level (hPa)</th><th id="o_t"></th><th id="o_s"></th><th>Wind dir (&deg;)</th><th>Height (m)</th></tr></thead><tbody id="ot_body"></tbody></table></div>
+  <div class="box">
+    <b>Read before trusting this.</b> The model was trained on real gridded weather (4 steps, 6 h apart). Here your single profile is copied across the whole grid and all 4 input steps (steady state, no trend), so the model knows nothing about the pattern around you or how conditions were changing. The <b>earliest forecast is +6 h</b> (the model's time step; it has no 1 h output). Badges show R&sup2; from the test set with real gridded inputs; expect manual-entry mode to do worse.
+  </div>
+</div>
+</div>
+
+<script>
+const API = location.protocol === 'file:' ? 'http://localhost:8000' : '';
+const $ = id => document.getElementById(id), WF = {ms: 1, kt: 0.514444, kmh: 1 / 3.6}, WL = {ms: 'm/s', kt: 'kt', kmh: 'km/h'};
+let S = null, DATA = null, U = null;
+const uv = () => $('wm').value === 'uv', tK = () => $('tu').value === 'K';
+const showErr = m => { $('err').innerHTML = ''; const d = document.createElement('div'); d.className = 'box err'; d.textContent = m; $('err').appendChild(d); };
+
+function labels() {
+  const wu = WL[$('wu').value], t = tK() ? 'K' : '\u00b0C';
+  $('l_st').textContent = `Temperature (${t})`; $('th_t').textContent = `Temp (${t})`;
+  $('l_sa').textContent = uv() ? `u (${wu})` : `Wind speed (${wu})`; $('l_sb').textContent = uv() ? `v (${wu})` : 'Wind direction (\u00b0)';
+  $('th_a').textContent = uv() ? `u (${wu})` : `Wind speed (${wu})`; $('th_b').textContent = uv() ? `v (${wu})` : 'Wind dir (\u00b0)';
+}
+['tu', 'wu'].forEach(i => $(i).onchange = labels);
+$('wm').onchange = () => { document.querySelectorAll('.wa,.wb,#s_wa,#s_wb').forEach(e => e.value = ''); labels(); };
+
+const rows = () => [...document.querySelectorAll('#lv tr')];
+const cell = (tr, c) => tr.querySelector('.' + c);
+function setRow(p, t, a, b, h) {
+  const tr = rows().find(r => +r.dataset.p === p); if (!tr) return false;
+  [['t', t], ['wa', a], ['wb', b], ['h', h]].forEach(([c, v]) => cell(tr, c).value = v == null ? '' : String(v).trim());
+  return true;
+}
+const num = (el, name) => { const s = el.value.trim(); if (!s) return null; const n = Number(s); if (isNaN(n)) throw new Error(`${name}: "${s}" is not a number`); return n; };
+const r1 = (x, d = 1) => (+x).toFixed(d);
+
+async function api(path, opt) {
+  const r = await fetch(API + path, opt), j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(typeof j.detail === 'string' ? j.detail : JSON.stringify(j.detail || j));
+  return j;
+}
+
+async function init() {
+  labels();
+  try {
+    S = await api('/api/schema');
+    $('status').textContent = 'model ready'; $('status').className = 'pill ok';
+    $('dom').textContent = `Model domain: lat ${S.domain.lat_min}-${S.domain.lat_max}, lon ${S.domain.lon_min}-${S.domain.lon_max}.`;
+    $('lv').innerHTML = S.levels_hpa.map(p => `<tr data-p="${p}"><td>${p}</td><td><input class="t" type="number" step="any"></td><td><input class="wa" type="number" step="any"></td><td><input class="wb" type="number" step="any"></td><td><input class="h" type="number" step="any"></td></tr>`).join('');
+    refreshRanges();
+  } catch (e) {
+    $('status').textContent = 'backend not reachable'; $('status').className = 'pill err';
+    showErr('Cannot reach the backend. Start it with: uvicorn main:app --port 8000 (from the backend folder), then reload. ' + e.message);
+  }
+}
+['lat', 'lon', 'tu', 'wu', 'wm'].forEach(id => $(id).addEventListener('change', refreshRanges));
+
+let TYP = null;
+async function refreshRanges() {
+  if (!S) return;
+  try { TYP = await api(`/api/typical?lat=${$('lat').value}&lon=${$('lon').value}`); } catch (e) { TYP = null; $('r_st').textContent = $('r_sa').textContent = $('r_sb').textContent = $('r_sp').textContent = ''; return; }
+  const wf = WF[$('wu').value], T = c => tK() ? c + 273.15 : c, s = TYP.surface;
+  const rng = (mean, std, lo = mean - 2 * std, hi = mean + 2 * std) => `typically ${lo.toFixed(1)}\u2013${hi.toFixed(1)}`;
+  $('r_st').textContent = rng(T(s.t2m_c), s.t2m_c_std) + (tK() ? ' K' : ' \u00b0C');
+  $('r_sp').textContent = rng(s.sp_hpa, s.sp_hpa_std) + ' hPa';
+  if (uv()) { $('r_sa').textContent = rng(s.u10 / wf, s.u10_std / wf) + ` ${WL[$('wu').value]}`; $('r_sb').textContent = rng(s.v10 / wf, s.v10_std / wf) + ` ${WL[$('wu').value]}`; }
+  else { $('r_sa').textContent = `typically 0\u2013${((s.wind_speed_ms + 2 * Math.hypot(s.u10_std, s.v10_std)) / wf).toFixed(1)} ${WL[$('wu').value]}`; $('r_sb').textContent = `around ${s.wind_dir_deg.toFixed(0)}\u00b0 on average`; }
+}
+
+$('btnClr').onclick = () => { document.querySelectorAll('#lv input,input[id^=s_]').forEach(e => e.value = ''); $('hint').textContent = ''; };
+$('btnPaste').onclick = () => $('pasteBox').style.display = $('pasteBox').style.display === 'none' ? 'block' : 'none';
+$('btnApply').onclick = () => {
+  let ok = 0, bad = [];
+  $('csv').value.split('\n').forEach(line => {
+    let c = line.trim().split(/[,\t;]/); if (c.length < 2) c = line.trim().split(/\s+/);
+    if (!c[0] || isNaN(+c[0])) return;
+    setRow(+c[0], c[1], c[2], c[3], c[4]) ? ok++ : bad.push(c[0]);
+  });
+  $('pasteMsg').textContent = `${ok} level(s) applied` + (bad.length ? `; ignored (not model levels): ${bad.join(', ')}` : '');
+};
+
+$('btnTyp').onclick = async () => {
+  try {
+    const d = await api(`/api/typical?lat=${$('lat').value}&lon=${$('lon').value}`), wf = WF[$('wu').value];
+    const T = c => tK() ? c + 273.15 : c, W = (s, dir, u, v) => uv() ? [u / wf, v / wf] : [s / wf, dir];
+    d.levels.forEach(l => { const [a, b] = W(l.wind_speed_ms, l.wind_dir_deg, l.u, l.v); setRow(l.pressure_hpa, r1(T(l.temperature_c)), r1(a), r1(b), r1(l.height_m, 0)); });
+    const s = d.surface, [a, b] = W(s.wind_speed_ms, s.wind_dir_deg, s.u10, s.v10);
+    $('s_t').value = r1(T(s.t2m_c)); $('s_wa').value = r1(a); $('s_wb').value = r1(b); $('s_p').value = r1(s.sp_hpa);
+    $('hint').textContent = 'Pre-filled with training-data averages for this location - overwrite with your real observations.';
+  } catch (e) { showErr(e.message); }
+};
+
+function payload() {
+  const wk = uv() ? ['u', 'v'] : ['wind_speed', 'wind_dir'], sk = uv() ? ['u10', 'v10'] : ['wind_speed', 'wind_dir'], levels = [];
+  rows().forEach(tr => {
+    const p = +tr.dataset.p, o = {pressure_hpa: p};
+    o.temperature = num(cell(tr, 't'), `${p} hPa temperature`); o[wk[0]] = num(cell(tr, 'wa'), `${p} hPa wind`);
+    o[wk[1]] = num(cell(tr, 'wb'), `${p} hPa wind`); o.height = num(cell(tr, 'h'), `${p} hPa height`);
+    if ([o.temperature, o[wk[0]], o[wk[1]], o.height].some(v => v !== null)) levels.push(o);
+  });
+  const surface = {t2m: num($('s_t'), 'Surface temperature'), sp_hpa: num($('s_p'), 'Station pressure'), [sk[0]]: num($('s_wa'), 'Surface wind'), [sk[1]]: num($('s_wb'), 'Surface wind')};
+  return {lat: +$('lat').value, lon: +$('lon').value, obs_time: $('ot').value || null, units: {temperature: $('tu').value, wind: $('wu').value}, surface, levels};
+}
+
+$('go').onclick = async () => {
+  $('err').innerHTML = ''; $('go').disabled = true; $('busy').textContent = 'running model...';
+  try {
+    DATA = await api('/api/predict', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload())});
+    U = {t: tK(), w: $('wu').value}; render();
+  } catch (e) { showErr(e.message); }
+  $('go').disabled = false; $('busy').textContent = '';
+};
+
+function badge(v, k) {   // skill badge: test-set normalized R2 at the nearest evaluated lead (6/24/48/72 h)
+  const L = S.skill.leads, lead = DATA.forecast[k].lead_hours;
+  let i = 0; L.forEach((l, j) => { if (Math.abs(l - lead) < Math.abs(L[i] - lead)) i = j; });
+  const r2 = S.skill.r2_normalized[v][i], cls = r2 >= .7 ? 'g' : r2 >= .4 ? 'w' : 'r';
+  return `<span class="b ${cls}" title="Test-set normalized R2 = ${r2} at +${L[i]}h; typical error ${S.skill.rmse[v][i]} ${S.skill.rmse_unit[v]}">${cls === 'g' ? 'good' : cls === 'w' ? 'fair' : 'weak'} ${r2.toFixed(2)}</span>`;
+}
+
+function render() {
+  $('out').style.display = 'block';
+  $('tabs').innerHTML = DATA.forecast.map((f, k) => `<button data-k="${k}">+${f.lead_hours} h</button>`).join('');
+  $('tabs').onclick = e => { if (e.target.dataset.k) show(+e.target.dataset.k); };
+  $('warn').innerHTML = ''; DATA.warnings.forEach(w => { const d = document.createElement('div'); d.className = 'box'; d.textContent = w; $('warn').appendChild(d); });
+  show(0); $('out').scrollIntoView({behavior: 'smooth'});
+}
+
+function show(k) {
+  const f = DATA.forecast[k], s = f.surface, inp = DATA.input_used.surface, ws = x => r1(x / WF[U.w]), T = x => r1(U.t ? x + 273.15 : x), tl = U.t ? 'K' : '\u00b0C', wl = WL[U.w];
+  [...$('tabs').children].forEach((b, i) => b.classList.toggle('on', i === k));
+  $('ttl').textContent = `+${f.lead_hours} h` + (f.valid_time ? ` - valid ${f.valid_time.replace('T', ' ')} UTC` : '') + ` - grid cell row ${DATA.grid_point.row}, col ${DATA.grid_point.col}`;
+  $('sfc').innerHTML = `
+    <div class="card"><span class="lbl">Surface temperature ${badge('t2m', k)}</span><b>${T(s.t2m_c)} ${tl}</b><span class="was">input ${T(inp.t2m_c)}</span></div>
+    <div class="card"><span class="lbl">Surface wind ${badge('u10', k)}u ${badge('v10', k)}v</span><b>${ws(s.wind_speed_ms)} ${wl} from ${r1(s.wind_dir_deg, 0)}&deg;</b><span class="was">input ${ws(inp.wind_speed_ms)} ${wl} from ${r1(inp.wind_dir_deg, 0)}&deg;</span></div>
+    <div class="card"><span class="lbl">Surface pressure ${badge('sp', k)}</span><b>${r1(s.sp_hpa)} hPa</b><span class="was">input ${r1(inp.sp_hpa)}</span></div>`;
+  $('o_t').innerHTML = `Temp (${tl}) ${badge('temperature', k)}`;
+  $('o_s').innerHTML = `Wind speed (${wl}) ${badge('u_component_of_wind', k)}u ${badge('v_component_of_wind', k)}v`;
+  const tag = n => n === 1 ? ' <i title="not entered: smoothed estimate carried over from a nearby entered level">extrap</i>' : n === 2 ? ' <i title="not entered and far from any entered level: training-data average used">avg</i>' : '';
+  $('ot_body').innerHTML = f.levels.map((l, j) => {
+    const u = DATA.input_used.levels[j], sr = u.source;
+    return `<tr><td>${l.pressure_hpa}</td><td>${T(l.temperature_c)}<span class="was">in ${T(u.temperature_c)}${tag(sr.temperature)}</span></td>
+      <td>${ws(l.wind_speed_ms)}<span class="was">in ${ws(u.wind_speed_ms)}${tag(sr.wind)}</span></td><td>${r1(l.wind_dir_deg, 0)}<span class="was">in ${r1(u.wind_dir_deg, 0)}</span></td>
+      <td>${r1(l.height_m, 0)}<span class="was">in ${r1(u.height_m, 0)}${tag(sr.height)}</span></td></tr>`;
+  }).join('');
+}
+let LIVE = null;
+function pctBadge(p) {
+  if (p == null || Number.isNaN(p)) return '-';
+  const cls = p >= 70 ? 'g' : p >= 40 ? 'w' : 'r';
+  return `<span class="b ${cls}">${p.toFixed(0)}%</span>`;
+}
+function pctCell(v) {
+  if (v == null) return '<td colspan="5" class="note">-</td>';
+  const pctOfValCell = v.unit === 'C'
+    ? '<td class="note" title="Not meaningful for temperature -- see the explainer note above">n/a</td>'
+    : `<td>${pctBadge(v.pct_of_value)}</td>`;
+  return `<td>${r1(v.model)}</td><td>${r1(v.open_meteo)}</td><td>${r1(v.abs_error)} ${v.unit}</td>${pctOfValCell}<td>${pctBadge(v.vs_typical_error_pct)}</td>`;
+}
+function liveShow(k) {
+  const L = LIVE.comparison.by_lead[k];
+  [...$('liveTabs').children].forEach((b, i) => b.classList.toggle('on', i === k));
+  const rows = [];
+  L.surface.forEach(v => rows.push(`<tr><td>surface ${v.variable}</td>${pctCell(v)}</tr>`));
+  L.levels.forEach(r => {
+    rows.push(`<tr><td>${r.pressure_hpa} hPa temp</td>${pctCell(r.temperature)}</tr>`);
+    if (r.wind_speed) rows.push(`<tr><td>${r.pressure_hpa} hPa wind speed</td>${pctCell(r.wind_speed)}</tr>`);
+    if (r.height) rows.push(`<tr><td>${r.pressure_hpa} hPa height</td>${pctCell(r.height)}</tr>`);
+  });
+  $('liveBody').innerHTML = rows.join('');
+}
+$('btnLive').onclick = async () => {
+  $('liveErr').innerHTML = ''; $('btnLive').disabled = true; $('liveBusy').textContent = 'fetching live data + running model...';
+  try {
+    LIVE = await api(`/api/live/verify?lat=${$('lat').value}&lon=${$('lon').value}`);
+    $('liveOut').style.display = 'block';
+    const c = LIVE.comparison;
+    const warnBox = $('liveWarnings');
+    warnBox.innerHTML = '';
+    if (c.warnings && c.warnings.length) {
+      const hdr = document.createElement('div');
+      hdr.className = 'box err';
+      hdr.style.marginBottom = '4px';
+      hdr.innerHTML = `<b>&#9888; ${c.warnings.length} issue(s) found -- read before trusting the % below:</b>`;
+      warnBox.appendChild(hdr);
+      c.warnings.forEach(w => {
+        const d = document.createElement('div');
+        d.className = 'box err';
+        d.style.marginBottom = '4px';
+        d.textContent = w;
+        warnBox.appendChild(d);
+      });
+    }
+    $('liveOverall').textContent = (c.overall_accuracy_pct == null) ? 'n/a' : c.overall_accuracy_pct.toFixed(0) + '%';
+    $('liveNLevels').textContent = c.compared_levels.length;
+    $('liveCmpCount').textContent = c.compared_levels.length;
+    $('liveCmpList').textContent = c.compared_levels.join(', ') + ' hPa';
+    $('liveUncmpCount').textContent = c.uncompared_levels.length;
+    $('liveUncmpList').textContent = c.uncompared_levels.length ? c.uncompared_levels.join(', ') + ' hPa' : 'none -- all model levels are covered';
+    $('liveMissing').textContent = LIVE.missing_levels_from_open_meteo.length
+      ? `Open-Meteo had no current data for: ${LIVE.missing_levels_from_open_meteo.join(', ')} hPa (skipped, model extrapolated/climatology-filled those instead).`
+      : '';
+    $('liveTabs').innerHTML = c.by_lead.map((f, i) => `<button data-k="${i}">+${f.lead_hours}h</button>`).join('');
+    $('liveTabs').onclick = e => { if (e.target.dataset.k) liveShow(+e.target.dataset.k); };
+    liveShow(0);
+  } catch (e) {
+    const d = document.createElement('div'); d.className = 'box err'; d.textContent = e.message; $('liveErr').appendChild(d);
+  }
+  $('btnLive').disabled = false; $('liveBusy').textContent = '';
+};
+
+init();
+</script>
+</body>
+</html>
